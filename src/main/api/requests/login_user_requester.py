@@ -1,0 +1,17 @@
+from src.main.api.requests.requester import Requester
+from src.main.api.models.login_user_requests import LoginUserRequests
+import requests
+from src.main.api.models.login_user_response import LoginUserResponse
+from requests import Response
+
+class LoginUserRequester(Requester):
+    def post(self, login_user_request: LoginUserRequests) -> LoginUserResponse | Response:
+        url = f"{self.base_url}/auth/token/login"
+        response = requests.post(
+            url,
+            json=login_user_request.model_dump(),
+            headers=self.headers,
+        )
+        self.response_spec(response)
+
+        return LoginUserResponse(**response.json())

@@ -1,0 +1,21 @@
+import logging
+
+import pytest
+from typing import Any, List
+from src.main.api.classes.api_manager import ApiManager
+from src.main.api.models.create_account_response import CreateAccountResponse
+
+
+@pytest.fixture
+def created_obj():
+    objects: List[Any] = []
+    yield objects
+    clean_user(objects)
+
+def clean_user(objects: List[Any]):
+    api_manager = ApiManager(objects)
+    for u in objects:
+        if isinstance(u, CreateAccountResponse):
+            api_manager.admin_steps.delete_user(u.id)
+        else:
+            logging.warning(f"Error in delete user_id: {u.id}")

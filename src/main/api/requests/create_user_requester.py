@@ -1,0 +1,18 @@
+from http import HTTPStatus
+import requests
+from src.main.api.requests.requester import Requester
+from src.main.api.models.create_user_requests import CreateUserRequests
+from src.main.api.models.create_user_response import CreateUserResponse
+
+class CreateUserRequester(Requester):
+    def post(self, create_user_request: CreateUserRequests):
+        url = f"{self.base_url}/admin/create"
+        response = requests.post(
+            url,
+            json=create_user_request.model_dump(),
+            headers=self.headers,
+        )
+        self.response_spec(response)
+        if response.status_code in [HTTPStatus.OK, HTTPStatus.CREATED]:
+            return CreateUserResponse(**response.json())
+        return response
