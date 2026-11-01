@@ -1,8 +1,7 @@
 import pytest
-
 from src.main.api.classes.api_manager import ApiManager
 
 
 @pytest.fixture
-def api_manager(created_obj):
+def api_manager(created_obj: list):
     return ApiManager(created_obj)

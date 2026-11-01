@@ -24,5 +24,4 @@ class ResponseSpecs:
     def requests_bad_repayment():
         def confirm(response: Response):
             assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY, response.text
-
         return confirm

@@ -15,8 +15,8 @@ class TestCreateUser:
     )
     def test_create_user_valid(self, api_manager: ApiManager, create_user_requests: CreateUserRequests, db_session: Session):
         response = api_manager.admin_steps.create_user(create_user_requests)
-        assert create_user_requests.username == response.username
-        assert create_user_requests.role == response.role
+        assert create_user_requests.username == response.username, "Username созданного пользователя не совпадает с ожидаемым"
+        assert create_user_requests.role == response.role, "Role созданного пользователя не совпадает с ожидаемой"
 
         user_from_db = User.get_user_by_username(db_session, create_user_requests.username)
         assert user_from_db.username == create_user_requests.username, "Созданного пользователя нет в БД"
