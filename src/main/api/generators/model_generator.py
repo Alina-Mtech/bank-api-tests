@@ -51,4 +51,19 @@ class RandomModelGenerator:
             return RandomModelGenerator.generate(field_type)
         return None
 
+    @staticmethod
+    def generate_amount(min_amount: int, max_amount: int) -> int:
+        return random.randint(min_amount, max_amount)
+    @staticmethod
+    def generate_deposit_amount():
+        return RandomModelGenerator.generate_amount(1000, 9000)
+    @staticmethod
+    def generate_transfer_amount():
+        return RandomModelGenerator.generate_amount(500, 10000)
+    @staticmethod
+    def generate_credit_amount():
+        return RandomModelGenerator.generate_amount(5000, 15000)
+
+
+
 

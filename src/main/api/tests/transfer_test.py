@@ -1,34 +1,23 @@
-from src.main.api.models.account_up_requests import AccountUpRequests
+from src.main.api.classes.api_manager import ApiManager
+from src.main.api.models.account_up_response import AccountUpResponse
 import pytest
+from src.main.api.models.get_account_response import GetAccountResponse
+from src.main.api.models.create_user_requests import CreateUserRequests
 from src.main.api.models.transfer_requests import TransferRequests
 from sqlalchemy.orm import Session
 from src.main.api.db.crud.transaction_crud import TransactionCrudDb as Transaction
+from src.main.api.generators.model_generator import RandomModelGenerator
 
 class TestTransfer:
-    def test_transfer_valid(self, api_manager, create_user_requests, db_session: Session):
-        response1 = api_manager.user_steps.create_account(create_user_requests)
-        assert response1.balance == 0
+    def test_transfer_valid(self, api_manager: ApiManager, create_user_requests: CreateUserRequests, get_accounts_requests_valid: dict[str, AccountUpResponse | GetAccountResponse], db_session: Session):
+        amount = RandomModelGenerator.generate_transfer_amount()
+        transfer_requests = TransferRequests(fromAccountId=get_accounts_requests_valid["request1"].id, toAccountId=get_accounts_requests_valid["request2"].id, amount=amount)
+        response1 = api_manager.user_steps.transfer_account_valid(create_user_requests, transfer_requests)
+        response2 = api_manager.user_steps.get_account(create_user_requests, response1.toAccountId)
+        assert response2.balance == get_accounts_requests_valid["request2"].balance + amount, "Перевод не осуществился"
 
-        request1 = api_manager.user_steps.get_account(create_user_requests, response1.id)
-        assert hasattr(request1, "transactions")
-
-        amount = 1000
-        account_up_requests = AccountUpRequests(accountId=response1.id, amount=amount)
-        requests = api_manager.user_steps.account_up_valid(create_user_requests, account_up_requests)
-        assert requests.balance == request1.balance + amount
-
-        response2 = api_manager.user_steps.create_account(create_user_requests)
-        assert response2.balance == 0
-        request2 = api_manager.user_steps.get_account(create_user_requests, response2.id)
-        assert hasattr(request2, "transactions")
-
-        transfer_requests = TransferRequests(fromAccountId=response1.id, toAccountId=response2.id, amount=amount)
-        request = api_manager.user_steps.transfer_account_valid(create_user_requests, transfer_requests)
-        request3 = api_manager.user_steps.get_account(create_user_requests, request.toAccountId)
-        assert request3.balance == response2.balance + amount
-
-        transaction_from_db = Transaction.get_transaction_balance_by_id(db_session, request.toAccountId)
-        assert transaction_from_db.to_account_id == request.toAccountId, "Транзакции не было, id транзакции нет в БД"
+        transaction_from_db = Transaction.get_transaction_balance_by_id(db_session, response1.toAccountId)
+        assert transaction_from_db.to_account_id == response1.toAccountId, "Транзакции не было, id транзакции нет в БД"
         assert transaction_from_db.amount == amount, "Поле баланса транзакции отсутствует в БД"
 
     @pytest.mark.parametrize(
@@ -38,23 +27,13 @@ class TestTransfer:
             (10001),
         ]
     )
-    def test_transfer_invalid(self, api_manager, create_user_requests, amount_check, db_session: Session):
-        response1 = api_manager.user_steps.create_account(create_user_requests)
-        assert response1.balance == 0
-        amount1 = 9000
-        amount2 = 2000
-        account_up_requests1 = AccountUpRequests(accountId=response1.id, amount=amount1)
-        requests1 = api_manager.user_steps.account_up_valid(create_user_requests, account_up_requests1)
-        account_up_requests2 = AccountUpRequests(accountId=response1.id, amount=amount2)
-        requests2 = api_manager.user_steps.account_up_valid(create_user_requests, account_up_requests2)
-
-        response2 = api_manager.user_steps.create_account(create_user_requests)
-
-        transfer_requests = TransferRequests(fromAccountId=response1.id, toAccountId=response2.id, amount=amount_check)
-        request = api_manager.user_steps.transfer_account_invalid(create_user_requests, transfer_requests)
-
-        transaction_from_db = Transaction.get_transaction_balance_by_id(db_session, response2.id)
+    def test_transfer_invalid(self, api_manager: ApiManager, create_user_requests: CreateUserRequests, get_accounts_requests_invalid: dict[str, AccountUpResponse | GetAccountResponse], amount_check: int, db_session: Session):
+        transfer_requests = TransferRequests(fromAccountId=get_accounts_requests_invalid["request1"].id, toAccountId=get_accounts_requests_invalid["request2"].id, amount=amount_check)
+        response1 = api_manager.user_steps.transfer_account_invalid(create_user_requests, transfer_requests)
+        transaction_from_db = Transaction.get_transaction_balance_by_id(db_session, get_accounts_requests_invalid["request2"].id)
         assert transaction_from_db is None, "Транзакция ошибочно появилась в БД"
+
+
 
 
 
